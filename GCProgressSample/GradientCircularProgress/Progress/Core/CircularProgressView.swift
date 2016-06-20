@@ -44,15 +44,42 @@ class CircularProgressView : UIView {
         }
     }
     
+    var gradientLayer: CALayer?
+    
+    var rotationZ: CABasicAnimation {
+        get {
+            let animation: CABasicAnimation = CABasicAnimation(keyPath: "transform.rotation.z")
+            animation.duration = 0.8
+            animation.repeatCount = HUGE
+            animation.fromValue = NSNumber(float: 0.0)
+            animation.toValue = NSNumber(float: 2 * Float(M_PI))
+            
+            return animation
+        }
+    }
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         
         self.backgroundColor = UIColor.clearColor()
         self.layer.masksToBounds = true
+        
+        NSNotificationCenter.defaultCenter().addObserver(self,
+                                                         selector: #selector(viewWillEnterForeground(_:)),
+                                                         name: UIApplicationWillEnterForegroundNotification,
+                                                         object: nil)
     }
     
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    deinit {
+        NSNotificationCenter.defaultCenter().removeObserver(self)
+    }
+    
+    @objc private func viewWillEnterForeground(notification: NSNotification?) {
+        animation()
     }
     
     internal func initialize(frame: CGRect) {
@@ -91,13 +118,15 @@ class CircularProgressView : UIView {
     
     private func animation(gradient: UIView) {
         // Rotate Animation
-        let animation: CABasicAnimation = CABasicAnimation(keyPath: "transform.rotation.z")
-        animation.duration = 0.8
-        animation.repeatCount = HUGE
-        animation.fromValue = NSNumber(float: 0.0)
-        animation.toValue   = NSNumber(float: 2 * Float(M_PI))
-        
-        gradient.layer.addAnimation(animation, forKey: "rotate")
+        gradientLayer = gradient.layer
+        gradient.layer.addAnimation(rotationZ, forKey: "rotate")
+    }
+    
+    private func animation() {
+        // Rotate Animation
+        if let gradientLayer = gradientLayer {
+            gradientLayer.addAnimation(rotationZ, forKey: "rotate")
+        }
     }
     
     internal func showMessage(message: String) {
